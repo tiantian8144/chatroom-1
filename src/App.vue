@@ -27,7 +27,7 @@
         avatar: string = localStorage.avatar || '';
         socket: object = null;
         messages: Array<segment> = [];
-        domain: string = 'http://47.106.66.80';
+        domain: string = 'http://localhost:3000';
         history: Array<message> = [];
         latest: message = null;
 
