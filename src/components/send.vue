@@ -44,7 +44,7 @@
             <li class='emoji' v-for='(char, i) of emojis' :key='i'>{{char}}</li>
         </div>
         <div v-show='option === "palette"' class='panel panel-palette'></div>
-        <sound v-if='!isMobile && isRecorder' v-show='option === "audio"' class='panel panel-audio' @message='$emit("message", $event)' @cantrecord='isRecorder = false'></sound>
+        <sound v-if='!isMobile && isRecorder' v-show='option === "audio"' class='panel panel-audio' @message='$emit("message", $event); sending = true;' @cantrecord='isRecorder = false'></sound>
     </div>
 </template>
 
@@ -147,7 +147,7 @@
         }
 
         switchAudio() {
-            if(this.$children[0].recorder) {
+            if(this.$children[0] && this.$children[0].recorder) {
                 this.option = this.option === "audio" ? null : "audio"
             } else alert('无法使用录音功能'); 
         }
@@ -228,7 +228,7 @@
                     }
                 }
 
-                p.then(()=> { this.$emit('message', {data: content}); this.clear();}).catch(err=> { alert('发送失败，请重试'); this.sending = true; })
+                p.then(()=> { this.$emit('message', {data: content}); this.clear();}).catch(err=> { alert('发送失败，请重试'); this.sending = false; })
             } else alert('内容为空');
         }
 
