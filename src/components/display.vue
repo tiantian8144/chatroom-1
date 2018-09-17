@@ -20,7 +20,7 @@
 
         <div v-show='mask' class='mask' ref='mask'></div>
         <audio :src='audioSrc' style='display: none' ref='audio' 
-        @canplaythrough='$event.target.play()' 
+        @canplay='$refs.audio.play()' 
         @playing='SVG.setAttribute("class", "icon-voice animating")'
         @pause='SVG.setAttribute("class", "icon-voice"); audioSrc = ""'
         @ended='SVG.setAttribute("class", "icon-voice"); audioSrc = ""'></audio>
