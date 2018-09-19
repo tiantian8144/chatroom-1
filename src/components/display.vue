@@ -1,29 +1,28 @@
-@@ -0,0 +1,434 @@
 <template>
     <div class='container' id='display'
     @dragenter.self='$el.classList.add("drag-enter")'
     @dragover.prevent
     @drop.prevent='drop($event)'
     @dragleave.self='$el.classList.remove("drag-enter")'
-    @scroll='scroll'
-    @click='!isMobile && handler($event)'
-    @touchstart='handler($event)'>
-    
+    @scroll='scroll'>
+
         <div v-for='(item, index) of data' class='message' :class='{self: item.ID === ID}' :key='item.time + index'>
             <div v-if='index !== 0 && item.time - data[index - 1].time > 3600000' class='time'>{{formatTime(item.time)}}</div>
             <div class='avatar' :style='{backgroundImage: `url(${domain}/avatar/${item.avatar})`}'></div>
             <div class='wrapper'>
                 <div class='name'>{{item.name}}</div>
-                <div class='content' :class='{audio: item.duration}' :data-src='item.duration && `${domain}/audio/${item.data[0].content}`' v-html='generateHTML(item)'></div>
+                <div class='content' :class='{audio: item.duration}' :data-src='item.duration && `${domain}/audio/${item.data[0].content}`' v-html='generateHTML(item)'
+                @click='handler($event)'
+                @touchstart.prevent='handler($event)'></div>
             </div>
         </div>
 
         <div v-show='mask' class='mask' ref='mask'></div>
-        <audio :src='audioSrc' style='display: none' ref='audio' 
+        <audio :src='audioSrc' style='display: none' ref='audio'
         @canplay='$refs.audio.play()' 
-        @playing='SVG.setAttribute("class", "icon-voice animating")'
-        @pause='SVG.setAttribute("class", "icon-voice"); audioSrc = ""'
-        @ended='SVG.setAttribute("class", "icon-voice"); audioSrc = ""'></audio>
+        @playing='SVG.setAttribute("class", "icon-voice animating");'
+        @pause='SVG.setAttribute("class", "icon-voice"); audioSrc = "";'
+        @ended='SVG.setAttribute("class", "icon-voice"); audioSrc = "";'></audio>
 
         <transition name='tip'>
             <div class='unread' v-if='unread'><span 
@@ -41,12 +40,12 @@
     @Component
     export default class Display extends Vue {
 
-        @Prop(String) ID: string;
-        @Prop(String) name: string;
-        @Prop(String) domain: string;
-        @Prop(Array) history: Array<message>;
-        @Prop(Object) latest: message;
-        @Prop(Boolean) isMobile: boolean;
+        @Prop(String) ID;
+        @Prop(String) name;
+        @Prop(String) domain;
+        @Prop(Array) history;
+        @Prop(Object) latest;
+        @Prop(Boolean) isMobile;
 
         mask: boolean = false;
 
@@ -75,7 +74,7 @@
             this.data.push(val);
 
             if(val.ID === this.ID) this.$nextTick(()=> this.scrollTo(display.scrollHeight - display.offsetHeight));
-            else if(display.scrollHeight - display.offsetHeight - display.scrollTop > 150) this.unread++;
+            else if(display.scrollHeight - display.offsetHeight - display.scrollTop > 200) this.unread++;
 
         }
 
@@ -109,24 +108,18 @@
         }
 
         handler(e: MouseEvent) {
-            if(e.target.nodeType === 1 && e.target.getAttribute('class')) {
+            let content: HTMLElement = e.currentTarget as HTMLElement;
 
-                let target: HTMLElement = e.target as HTMLElement
-
-                if(target.getAttribute('class').includes('audio') || (target.parentNode.getAttribute('class') || "").includes('audio')) {
-
-                    if(target.nodeName === 'svg') this.SVG = target;
-                    else if(target.className.includes('duration')) this.SVG = target.previousElementSibling;
-                    else this.SVG = target.children[0];
-
-                    if(this.SVG.getAttribute('class').includes('animating'))
-                        this.$refs.audio.pause();
-                    else {
-                        try{ 
-                            document.querySelector('.icon-voice.animating').setAttribute('class', 'icon-voice');
-                        } catch(e) {}
-                        this.audioSrc = this.SVG.parentNode.dataset.src;
-                    }
+            if(content.className.includes('audio')) {
+                
+                if(this.$refs.audio.paused) {
+                    this.audioSrc = content.dataset.src;
+                    this.SVG = content.querySelector('svg');
+                } else if (content.querySelector('svg').getAttribute('class').includes('animating')) {
+                    this.$refs.audio.pause();
+                } else {
+                    this.$refs.audio.pause();
+                    let ID = setInterval(()=> this.audioSrc || (this.audioSrc = content.dataset.src, this.SVG = content.querySelector('svg'), clearInterval(ID)), 10);
                 }
             }
         }
@@ -278,12 +271,11 @@
         }
 
         .unread {
-            position: sticky;
-            direction: rtl;
+            position: absolute;
+            right: 1em;
             bottom: 1em;
             color: white;
             
-
             span {
                 position: relative;
                 display: table-cell;
@@ -344,8 +336,7 @@
     #display .message .content {
 
         img {
-            width: 100%;
-            max-width: 8em;
+            width: 8em;
             padding: 0 .5em;
         }
 

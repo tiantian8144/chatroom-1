@@ -1,4 +1,3 @@
-@@ -0,0 +1,348 @@
 <template>
     <div class='container'>
         <div class='mask'></div>

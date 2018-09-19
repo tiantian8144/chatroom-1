@@ -1,4 +1,3 @@
-@@ -0,0 +1,456 @@
 <template>
     <div>
         <div class='bubble' ref='bubble' @transitionend='bubbleRemove'></div>
@@ -24,12 +23,6 @@
                 </svg>
             </div>
 
-            <div class='icon icon-palette'>
-                <svg  :class='{active: option === "palette"}' 
-                @click='option = option === "palette" ? "" : "palette"'
-                @touchstart.prevent='option = option === "palette" ? "" : "palette"' viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3064" xmlns:xlink="http://www.w3.org/1999/xlink" ><path d="M512 128c-212.053333 0-384 171.946667-384 384s171.946667 384 384 384c35.413333 0 64-28.586667 64-64 0-16.64-6.186667-31.573333-16.64-42.88-10.026667-11.306667-16-26.026667-16-42.453333 0-35.413333 28.586667-64 64-64l75.306667 0c117.76 0 213.333333-95.573333 213.333333-213.333333 0-188.586667-171.946667-341.333333-384-341.333333zM277.333333 512c-35.413333 0-64-28.586667-64-64s28.586667-64 64-64 64 28.586667 64 64-28.586667 64-64 64zM405.333333 341.333333c-35.413333 0-64-28.586667-64-64s28.586667-64 64-64 64 28.586667 64 64-28.586667 64-64 64zM618.666667 341.333333c-35.413333 0-64-28.586667-64-64s28.586667-64 64-64 64 28.586667 64 64-28.586667 64-64 64zM746.666667 512c-35.413333 0-64-28.586667-64-64s28.586667-64 64-64 64 28.586667 64 64-28.586667 64-64 64z" p-id="3065"></path></svg>
-            </div>
-
             <div class='icon icon-audio' v-if='!isMobile'>
                 <svg  :class='{active: option === "audio"}' @click='switchAudio' viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4417" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M480 704a160 160 0 0 0 160-160V160a160 160 0 0 0-320 0v384a160 160 0 0 0 160 160z m224-256v96a224 224 0 1 1-448 0v-96H192v96a288 288 0 0 0 256 286.208V960h-128v64h320v-64h-128v-129.792A288 288 0 0 0 768 544v-96h-64z" p-id="4418"></path></svg>
             </div>
@@ -40,10 +33,9 @@
             <input id='uploadImg' type="file" @change='upload($event)' accept='image/*' style='display: none' multiple>
         </div>
 
-        <div v-show='option === "emojis"' class='panel panel-emojis' @click='isMobile || insertEmoji' @touchstart='insertEmoji'>
+        <div v-show='option === "emojis"' class='panel panel-emojis' :class='{"panel-emojis-hover": !isMobile}' @click='isMobile || insertEmoji($event)' @touchstart='insertEmoji($event)'>
             <li class='emoji' v-for='(char, i) of emojis' :key='i'>{{char}}</li>
         </div>
-        <div v-show='option === "palette"' class='panel panel-palette'></div>
         <sound v-if='!isMobile && isRecorder' v-show='option === "audio"' class='panel panel-audio' @message='$emit("message", $event); sending = true;' @cantrecord='isRecorder = false'></sound>
     </div>
 </template>
@@ -58,9 +50,9 @@
     @Component({components: { Sound }, mixins: [mixin]})
     export default class Send extends Vue {
 
-        @Prop(String) avatar: string;
-        @Prop(String) domain: string;
-        @Prop(Boolean) isMobile: boolean;
+        @Prop(String) avatar;
+        @Prop(String) domain;
+        @Prop(Boolean) isMobile;
 
         sending: boolean = false;
         isRecorder: boolean = true;
@@ -73,7 +65,7 @@
 
         mounted() {
 
-            let val: Array<string> = ['表情', '颜色', '录音', '图片'],
+            let val: Array<string> = ['表情', '录音', '图片'],
                 bubble: Element = this.$refs.bubble as Element;
 
             this.comppress = new compressImg();
@@ -82,7 +74,7 @@
                 Array.from(document.querySelectorAll('.options svg'), (v, i)=> {
                     v.addEventListener('mouseenter', ()=> {
                         bubble.textContent = val[i];
-                        v.parentElement.insertBefore(bubble, v.parentElement.children[0]);
+                        v.parentNode.insertBefore(bubble, v.parentNode.children[0]);
                         setTimeout(()=> bubble.classList.toggle('bubble-active'), 0);
                     });
 
@@ -375,9 +367,9 @@
         border-radius: .2em;
         color: #fff;
         font-size: .8em;
-        font-weight: 100;
+        font-weight: 300;
         white-space: nowrap;
-        background-color: rgba(0, 0, 0, .8);
+        background-color: rgba(0, 0, 0, 1);
         transform: translate(-50%, -200%);
         transition: all .5s ease-in-out;
 
@@ -389,8 +381,8 @@
             width: .8em;
             height: .8em;
             border-radius: .2em;
-            transform: translate(-50%, -50%) rotate(45deg);
-            background-image: linear-gradient(135deg, transparent, transparent 48%, rgba(0, 0, 0, .8) 48% ,rgba(0, 0, 0, .8));
+            transform: translate(-50%, -60%) rotate(45deg);
+            background-image: linear-gradient(135deg, transparent, transparent 50%, black 50% ,black);
         }
     }
 
@@ -430,8 +422,12 @@
             font-size: 1.5em;
             text-align: center;
             list-style-type: none;
+        }
 
-            &:hover {
+
+        &.panel-emojis-hover {
+
+            .emoji:hover {
                 cursor: pointer;
                 background-color: #ddd;
             }
@@ -440,8 +436,11 @@
 
     @media screen and (max-width: 768px) {
 
-        .emoji {
-            width: 16.66%!important;
+        .panel-emojis {
+
+            .emoji {
+                width: 16.66%!important;
+            }
         }
         
     }
