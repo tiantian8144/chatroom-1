@@ -21,7 +21,7 @@ export default class Recorder {
 
         this.context = new AudioContext();
 
-        return navigator.mediaDevices.getUserMedia({ audio: true})
+        return navigator.mediaDevices.getUserMedia({ audio: true })
                 .then((stream: MediaStream)=> {
                     this.sourceNode = this.context.createMediaStreamSource(stream);
 

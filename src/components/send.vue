@@ -59,7 +59,7 @@
 
         option: string = 'null';
         imageData: Array<Blob> = [];
-        comppress: compressImg = null;
+        compress: compressImg = null;
         selection = null;
         emojis: Array<string> = ['😂', '🙏', '😄', '😏', '😇', '😅', '😌', '😘', '😍', '🤓', '😜', '😎', '😊', '😳', '🙄', '😱', '😒', '😔', '😷', '👿', '🤗', '😩', '😤', '😣', '😰', '😴', '😬', '😭', '👻', '👍', '✌️', '👉', '👀', '🐶', '🐷', '😹', '⚡️', '🔥', '🌈', '🍏', '⚽️', '❤️', '🇨🇳']
 
@@ -167,13 +167,6 @@
             p.then(resolve=> this.insert(fragment));
         }
 
-        //根据字符串创建节点
-        createNodeByString(str: string): Node | NodeListOf<Node & ChildNode> {
-            let div: Element = document.createElement('div');
-            div.innerHTML = str;
-            return div.childElementCount > 1 ? div.childNodes : div.firstChild;
-        }
-
         //粘贴事件处理函数
         paste(e: ClipboardEvent) {
             let file = e.clipboardData.files[0];
@@ -211,8 +204,8 @@
                         content[i] = {type: 'text', content: this.encodeHTML(node.nodeValue)};
                     }
                     else if(node.nodeType === 1) {
-
-                        p = p.then(()=> this.comppress.compress(this.imageData[node.dataset.order], {scale: .4, type: 'blob'}))
+                        let data = this.imageData[node.dataset.order];
+                        p = p.then(()=> data.size < 1024 * 512 ? [data] :this.compress.compress(data, {scale: .4, type: 'blob'}))
                                 .then(result=> new Promise(resolve=> {
                                     reader.onload = (e: Event)=> { content[i] = {type: 'img', content: e.target.result}; resolve();};
                                     reader.readAsArrayBuffer(result[0]);

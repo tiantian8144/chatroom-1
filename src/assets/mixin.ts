@@ -20,5 +20,12 @@ export default class mixin extends Vue{
             )
             : html;
     }
+
+    //根据字符串创建节点
+    createNodeByString(str: string): Node | NodeListOf<Node & ChildNode> {
+        let div: Element = document.createElement('div');
+        div.innerHTML = str;
+        return div.childElementCount > 1 ? div.childNodes : div.firstChild;
+    }
     
 }

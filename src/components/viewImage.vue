@@ -1,20 +1,17 @@
 <template>
-    <div class='container' @click><img :src="src"  ref='img'
+    <div class='container'><img :src="src"  ref='img'
     @mousedown='$refs.img.onmousemove = move'
-    @mousemove="touching && "
     @mouseup="touching = false"></div>
 </template>
 
 <script lang='ts'>
 
-    import { Vue, Component } from 'vue-property-decorator';
+    import { Vue, Component, Prop } from 'vue-property-decorator';
 
     @Component
     export default class ViewImage extends Vue {
 
-        @Prop(Boolean) isMobile;
-
-        :  = '';
+        @Prop({type: Boolean, default: false}) isMobile;
 
         mounted() {
             this.bus.$on('view-image', target=> {
@@ -26,8 +23,6 @@
         move(e: MouseEvent) {
 
         }
-
-    
     }
 
 </script>

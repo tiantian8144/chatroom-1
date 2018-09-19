@@ -63,10 +63,8 @@
         mounted() {
 
             new Recorder((time: number)=> {
-                if(time > 15) {
-                    this.handleAudition();
-                    alert('录音不得超过15s');
-                } else  this.time = time})
+                if(time > 15) { this.handleAudition(); alert('录音不得超过15s'); } 
+                else  this.time = time})
             .then(recorder=> { this.recorder = recorder; recorder.suspend(); }).catch(err=> { this.$emit('cantrecord'); alert(err.message || '当前浏览器无法使用录音功能') })
                     
             this.reader.addEventListener('load', (e: ProgressEvent)=> this.recordURL = this.reader.result);
@@ -74,7 +72,7 @@
 
         //录音
         start(e: MouseEvent) {
-            this.recorder.resume()
+            this.recorder.resume();
             this.recording = true;
             this.bus.$emit('state', true);
 
@@ -89,8 +87,9 @@
                     this.bus.$emit('state', false);
 
                     this.recorder.clear();
-                    (e.currentTarget as Document).onmouseup = null;
+                    document.onmouseup = null;
                 })
+                .catch(err=> { alert('录音出现错误，请重试'); document.onmouseup = null; })
                 
 
             };
@@ -149,7 +148,7 @@
             this.recordData = null;
             this.recorder.clear();
             this.bus.$emit('state', false);
-            this.$nextTick(()=> this.prompt = "按住说话");
+            let ID = setInterval(()=> this.playing || (this.prompt = '按住说话', clearInterval(ID)), 10);
         }
     }
 

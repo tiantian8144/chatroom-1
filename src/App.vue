@@ -1,4 +1,3 @@
-@@ -0,0 +1,98 @@
 <template>
 	<div id='app' :style='{margin: name ? "0 20%" : "0 30%"}'>
         <div v-if='name && ID && avatar' class='wrapper'>
@@ -17,8 +16,9 @@
     import Username from './components/username.vue';
     import Display from './components/display.vue';
     import Send from './components/send.vue';
+    import ViewImage from './components/viewImage.vue';
 
-    @Component({components: {Username, Display, Send}})
+    @Component({components: {Username, Display, Send, ViewImage}})
     export default class App extends Vue {
 
         isMobile: boolean = true;
@@ -27,7 +27,7 @@
         avatar: string = localStorage.avatar || '';
         socket: object = null;
         messages: Array<segment> = [];
-        domain: string = 'http://localhost:3000';
+        domain: string = 'http://47.106.66.80';
         history: Array<message> = [];
         latest: message = null;
 
@@ -82,7 +82,9 @@
     .wrapper {
         display: flex;
         flex-direction: column;
+        max-width: 800px;
         height: 100%;
+        margin: auto;
     }
 
     .display {
