@@ -61,11 +61,13 @@
         }
 
         mounted() {
-
-            new Recorder((time: number)=> {
-                if(time > 15) { this.handleAudition(); alert('录音不得超过15s'); } 
-                else  this.time = time})
-            .then(recorder=> { this.recorder = recorder; recorder.suspend(); }).catch(err=> { this.$emit('cantrecord'); alert(err.message || '当前浏览器无法使用录音功能') })
+            
+            let block: boolean = false;
+            new Recorder(14.8, (time: number)=> {
+                if(time < 14.8 ) { this.recording && (this.time = time); block = false; }
+                else if(!block) { this.handleAudition(); block = true; alert('录音不得超过15s'); } 
+            })
+            .then(recorder=> this.recorder = recorder ).catch(err=> { this.$emit('cantrecord'); alert('当前浏览器无法使用录音功能') })
                     
             this.reader.addEventListener('load', (e: ProgressEvent)=> this.recordURL = this.reader.result);
         }
@@ -100,7 +102,7 @@
             this.recording = false;
             this.bus.$emit('state', false);
             document.onmouseup = null; 
-            this.recorder.suspend().then(()=> { this.recorder.clear(); this.time = 0; })
+            this.recorder.suspend().then(()=> { this.recorder.clear(); this.time = 0; this.$nextTick(()=> this.prompt = '按住说话')})
         }
 
         //显示额外的信息
@@ -137,9 +139,10 @@
         pause() {
             clearInterval(this.ID);
             this.time = this.recorder.time;
-            this.$refs.progress.style.strokeDashoffset = this.progressLen;
+            try { this.$refs.progress.style.strokeDashoffset = this.progressLen } catch(e) {}; 
+            try { this.$refs.audio.currentTime = 0 } catch(e) {};
             this.playing = false;
-            this.$refs.audio.currentTime = 0;
+            this.audition || this.$nextTick(()=> this.prompt = '按住说话');
         }
 
         quit() {
@@ -148,7 +151,7 @@
             this.recordData = null;
             this.recorder.clear();
             this.bus.$emit('state', false);
-            let ID = setInterval(()=> this.playing || (this.prompt = '按住说话', clearInterval(ID)), 10);
+            this.prompt = '按住说话';
         }
     }
 

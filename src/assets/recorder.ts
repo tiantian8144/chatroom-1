@@ -5,8 +5,11 @@ export default class Recorder {
     rawBuffer: Array<any> = [];
     wavBuffer: ArrayBuffer | Array<any>  = null;
     time: number = 0;
+    maxTime: number = 30;
 
-    constructor(processHandler?: (time: number)=> any) {
+    constructor(maxTime?: number, processHandler?: (time: number)=> any) {
+
+        window.AudioContext = window.AudioContext || window.webkitAudioContext;
 
         if(!window.AudioContext) {
             return Promise.reject(new Error('您的浏览器暂不支持音频处理，请下载新版本或者更换浏览器重试'));
@@ -20,23 +23,30 @@ export default class Recorder {
         }
 
         this.context = new AudioContext();
+        this.maxTime = maxTime || 30;
 
         return navigator.mediaDevices.getUserMedia({ audio: true })
                 .then((stream: MediaStream)=> {
+                    
                     this.sourceNode = this.context.createMediaStreamSource(stream);
 
                     let scriptNode = this.context.createScriptProcessor(1024, 1, 1);
                     scriptNode.addEventListener('audioprocess', (e: AudioProcessingEvent)=> {
                         this.rawBuffer.push(...e.inputBuffer.getChannelData(0));
                         this.time += e.inputBuffer.duration;
+
+                        if(this.time >= this.maxTime) {
+                            this.suspend();
+                            this.time = this.maxTime;
+                        }
             
-                        processHandler && processHandler(this.time);
+                        processHandler && processHandler.call(this, this.time);
                     });
 
                     this.sourceNode.connect(scriptNode);
                     scriptNode.connect(this.context.destination);
-
-                    return new Promise(resolve=> resolve(this));
+                    
+                    return this.suspend().then(()=> this);
                 })
     }
 

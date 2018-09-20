@@ -203,9 +203,9 @@
                     if(node.nodeType === 3) {
                         content[i] = {type: 'text', content: this.encodeHTML(node.nodeValue)};
                     }
-                    else if(node.nodeType === 1) {
+                    else if(node.nodeName === 'IMG') {
                         let data = this.imageData[node.dataset.order];
-                        p = p.then(()=> data.size < 1024 * 512 ? [data] :this.compress.compress(data, {scale: .4, type: 'blob'}))
+                        p = p.then(()=> data.size < 1024 * 512 ? [data] : this.compress.compress(data, {scale: .4, type: 'blob'}))
                                 .then(result=> new Promise(resolve=> {
                                     reader.onload = (e: Event)=> { content[i] = {type: 'img', content: e.target.result}; resolve();};
                                     reader.readAsArrayBuffer(result[0]);
@@ -213,7 +213,7 @@
                     }
                 }
 
-                p.then(()=> { this.$emit('message', {data: content}); this.clear();}).catch(err=> { alert('发送失败，请重试'); this.sending = false; })
+                p.then(()=> { this.$emit('message', {data: content}); this.clear();}).catch(err=> {alert('发送失败，请重试'); this.sending = false; })
             } else alert('内容为空');
         }
 

@@ -1,31 +1,34 @@
 <template>
-    <div class='container' id='display'
-    @dragenter.self='$el.classList.add("drag-enter")'
-    @dragover.prevent
-    @drop.prevent='drop($event)'
-    @dragleave.self='$el.classList.remove("drag-enter")'
-    @scroll='scroll'>
+    <div class='assistor'>
 
-        <div v-for='(item, index) of data' class='message' :class='{self: item.ID === ID}' :key='item.time + index'>
-            <div v-if='index !== 0 && item.time - data[index - 1].time > 3600000' class='time'>{{formatTime(item.time)}}</div>
-            <div class='avatar' :style='{backgroundImage: `url(${domain}/avatar/${item.avatar})`}'></div>
-            <div class='wrapper'>
-                <div class='name'>{{item.name}}</div>
-                <div class='content' :class='{audio: item.duration, only: item.data.length === 1 && item.data[0].type === "img"}' :data-src='item.duration && item.data[0].content' v-html='generateHTML(item)'
-                @click='isMobile || handler($event)'
-                @touchstart='isMoved = false'
-                @touchmove='isMoved = true'
-                @touchend='isMoved || handler($event)'></div>
+        <div class='container' id='display' ref='container'
+        @dragenter.self='$el.classList.add("drag-enter")'
+        @dragover.prevent
+        @drop.prevent='drop($event)'
+        @dragleave.self='$el.classList.remove("drag-enter")'
+        @scroll='scroll'>
+
+            <div v-for='(item, index) of data' class='message' :class='{self: item.ID === ID}' :key='item.time + index'>
+                <div v-if='index !== 0 && item.time - data[index - 1].time > 3600000' class='time'>{{formatTime(item.time)}}</div>
+                <div class='avatar' :style='{backgroundImage: `url(${domain}/avatar/${item.avatar})`}'></div>
+                <div class='wrapper'>
+                    <div class='name'>{{item.name}}</div>
+                    <div class='content' :class='{audio: item.duration, only: item.data.length === 1 && item.data[0].type === "img"}' :data-src='item.duration && item.data[0].content' v-html='generateHTML(item)'
+                    @click='isMobile || handler($event)'
+                    @touchstart='isMoved = false'
+                    @touchmove='isMoved = true'
+                    @touchend='isMoved || handler($event)'></div>
+                </div>
             </div>
+
+            <div v-show='mask' class='mask' ref='mask'></div>
+
+            <transition name='tip'>
+                <div class='unread' v-if='unread'><span 
+                @click='scrollTo($refs.container.scrollHeight - $refs.container.offsetHeight); unread = 0;'
+                @touchstart.prevent='scrollTo($refs.container.scrollHeight - $refs.container.offsetHeight); unread = 0;'>{{unread}}</span></div>
+            </transition>
         </div>
-
-        <div v-show='mask' class='mask' ref='mask'></div>
-
-        <transition name='tip'>
-            <div class='unread' v-if='unread'><span 
-            @click='scrollTo($el.scrollHeight - $el.offsetHeight); unread = 0;'
-            @touchstart.prevent='scrollTo($el.scrollHeight - $el.offsetHeight); unread = 0;'>{{unread}}</span></div>
-        </transition>
     </div>
 
 </template>
@@ -71,15 +74,15 @@
         }
 
         @Watch('history', {immediate: true})
-        onHistoryChanged(val) { this.data.unshift(...val) === 20 && this.$nextTick(()=> this.$el.scrollTop = this.$el.scrollHeight) }
+        onHistoryChanged(val) { val.length && this.data.unshift(...val) <= 20 && setTimeout(()=> this.$refs.container.scrollTop = this.$refs.container.scrollHeight, 500) }
 
         @Watch('latest')
         onLatestChanged(val) { 
-            let display = this.$el;
+            let display = this.$refs.container;
 
             this.data.push(val);
 
-            if(val.ID === this.ID || display.scrollHeight - display.offsetHeight - display.scrollTop < 150) this.$nextTick(()=> this.scrollTo(display.scrollHeight - display.offsetHeight));
+            if(val.ID === this.ID || display.scrollHeight - display.offsetHeight - display.scrollTop < 150) this.$nextTick(()=> this.scrollTo(display.scrollHeight));
             else this.unread++;
 
         }
@@ -96,9 +99,10 @@
         }
 
         scrollTo(target: number) {
-            let display = this.$el,
+            let display = this.$refs.container,
                 step = (target - display.scrollTop) / 30,
-                ID = setInterval(()=> display.scrollTop >= target ? clearInterval(ID) : (display.scrollTop += step), 10);
+                height = display.offsetHeight,
+                ID = setInterval(()=> display.scrollTop >= target || display.scrollTop >= display.scrollHeight - height ? clearInterval(ID) : (display.scrollTop += step), 10);
                 
             //消除移动端软键盘消失导致的定时器无法取消问题
             this.isMobile && setTimeout(()=> { clearInterval(ID); display.scrollTop = display.scrollHeight }, 300);
@@ -170,8 +174,8 @@
         }
 
         scroll() {
-            this.$el.scrollTop === 0 && this.$emit('loadmore', this.data.length);
-            this.$el.children[this.data.length - this.unread].getBoundingClientRect().top < this.$el.offsetHeight && (this.unread = 0);
+            this.$refs.container.scrollTop === 0 && this.$emit('loadmore', this.data.length);
+            this.unread && this.$refs.container.children[this.data.length - this.unread].getBoundingClientRect().top < this.$el.offsetHeight && (this.unread = 0);
         }
     }
 
@@ -179,12 +183,18 @@
 
 <style lang="scss" scoped>
 
+    .assistor {
+        position: relative;
+        overflow: hidden;
+    }
+
     .container {
 
-        position: relative;
+        height: 100%;
         padding: 0 .6em;
         overflow-x: hidden;
         overflow-y: auto;
+        
 
         &::-webkit-scrollbar {
             width: 1%;
@@ -364,7 +374,7 @@
 
     .tip-leave-to {
         opacity: 0;
-        transform: translateY(-100px);
+        transform: translateY(-60px);
     }
 
 </style>
