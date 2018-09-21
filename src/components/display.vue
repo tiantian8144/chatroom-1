@@ -22,13 +22,13 @@
             </div>
 
             <div v-show='mask' class='mask' ref='mask'></div>
-
-            <transition name='tip'>
-                <div class='unread' v-if='unread'><span 
-                @click='scrollTo($refs.container.scrollHeight - $refs.container.offsetHeight); unread = 0;'
-                @touchstart.prevent='scrollTo($refs.container.scrollHeight - $refs.container.offsetHeight); unread = 0;'>{{unread}}</span></div>
-            </transition>
         </div>
+
+        <transition name='tip'>
+            <div class='unread' v-if='unread'><span 
+            @click='scrollTo($refs.container.scrollHeight - $refs.container.offsetHeight); unread = 0;'
+            @touchstart.prevent='scrollTo($refs.container.scrollHeight - $refs.container.offsetHeight); unread = 0;'>{{unread}}</span></div>
+        </transition>
     </div>
 
 </template>
@@ -84,7 +84,6 @@
 
             if(val.ID === this.ID || display.scrollHeight - display.offsetHeight - display.scrollTop < 150) this.$nextTick(()=> this.scrollTo(display.scrollHeight));
             else this.unread++;
-
         }
 
         beforeMount() {
@@ -186,16 +185,53 @@
     .assistor {
         position: relative;
         overflow: hidden;
+
+        .unread {
+            position: absolute;
+            right: 1em;
+            bottom: 1em;
+            color: white;
+            transition: all .5s ease-in-out;
+            
+            span {
+                position: relative;
+                display: table-cell;
+                vertical-align: middle;
+                width: 2em;
+                height: 2em;
+                background-color: #409eff;
+                border-radius: 50%;
+                text-align: center;
+
+                &:hover {
+                    cursor: pointer;
+                }
+
+                &:before {
+                    content: '';
+                    position: absolute;
+                    width: .5em;
+                    height: .5em;
+                    top: 100%;
+                    left: 50%;
+                    transform-origin: 50% 50%;
+                    transform: translate(-50%, -70%) rotate(45deg);
+                    background-color: #409eff;
+                }
+            }
+        }
     }
 
     .container {
-
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 96%;
         height: 100%;
-        padding: 0 .6em;
+        padding: 0 2%;
         overflow-x: hidden;
         overflow-y: auto;
         
-
         &::-webkit-scrollbar {
             width: 1%;
         }
@@ -213,7 +249,7 @@
 
         .mask {
             position: fixed;
-            z-index: 1;
+            z-index: 2018;
             top: 0;
             left: 20%;
             background-color: rgba(0, 0, 0, .5);
@@ -325,40 +361,7 @@
             }
         }
 
-        .unread {
-            position: absolute;
-            right: 1em;
-            bottom: 1em;
-            color: white;
-            transition: all .5s ease-in-out;
-            
-            span {
-                position: relative;
-                display: table-cell;
-                vertical-align: middle;
-                width: 2em;
-                height: 2em;
-                background-color: #409eff;
-                border-radius: 50%;
-                text-align: center;
-
-                &:hover {
-                    cursor: pointer;
-                }
-
-                &:before {
-                    content: '';
-                    position: absolute;
-                    width: .5em;
-                    height: .5em;
-                    top: 100%;
-                    left: 50%;
-                    transform-origin: 50% 50%;
-                    transform: translate(-50%, -70%) rotate(45deg);
-                    background-color: #409eff;
-                }
-            }
-        }
+        
 
     }
 

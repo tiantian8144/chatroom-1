@@ -5,9 +5,8 @@ export default class Recorder {
     rawBuffer: Array<any> = [];
     wavBuffer: ArrayBuffer | Array<any>  = null;
     time: number = 0;
-    maxTime: number = 30;
 
-    constructor(maxTime?: number, processHandler?: (time: number)=> any) {
+    constructor(processHandler?: (time: number)=> any) {
 
         window.AudioContext = window.AudioContext || window.webkitAudioContext;
 
@@ -23,7 +22,6 @@ export default class Recorder {
         }
 
         this.context = new AudioContext();
-        this.maxTime = maxTime || 30;
 
         return navigator.mediaDevices.getUserMedia({ audio: true })
                 .then((stream: MediaStream)=> {
@@ -34,13 +32,8 @@ export default class Recorder {
                     scriptNode.addEventListener('audioprocess', (e: AudioProcessingEvent)=> {
                         this.rawBuffer.push(...e.inputBuffer.getChannelData(0));
                         this.time += e.inputBuffer.duration;
-
-                        if(this.time >= this.maxTime) {
-                            this.suspend();
-                            this.time = this.maxTime;
-                        }
             
-                        processHandler && processHandler.call(this, this.time);
+                        processHandler && processHandler(this.time);
                     });
 
                     this.sourceNode.connect(scriptNode);

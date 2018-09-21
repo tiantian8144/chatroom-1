@@ -62,22 +62,23 @@
 
         mounted() {
             
-            let block: boolean = false;
-            new Recorder(14.8, (time: number)=> {
-                if(time < 14.8 ) { this.recording && (this.time = time); block = false; }
-                else if(!block) { this.handleAudition(); block = true; alert('录音不得超过15s'); } 
+            new Recorder((time: number)=> {
+                if(time < 15 ) { this.recording && (this.time = time); }
+                else { alert('录音不得超过15s'); this.handleAudition(); } 
             })
-            .then(recorder=> this.recorder = recorder ).catch(err=> { this.$emit('cantrecord'); alert('当前浏览器无法使用录音功能') })
+            .then(recorder=> this.recorder = recorder).catch(err=> { this.$emit('cantrecord'); alert('您的浏览器无法使用录音功能'); })
                     
             this.reader.addEventListener('load', (e: ProgressEvent)=> this.recordURL = this.reader.result);
         }
 
         //录音
         start(e: MouseEvent) {
-            this.recorder.resume();
-            this.recording = true;
-            this.bus.$emit('state', true);
-
+            this.recorder.resume()
+            .then(()=> {
+                this.recording = true;
+                this.bus.$emit('state', true);
+            });
+            
             document.onmouseup = (e: MouseEvent)=> {
                 
                 this.recorder.suspend()
@@ -91,9 +92,14 @@
                     this.recorder.clear();
                     document.onmouseup = null;
                 })
-                .catch(err=> { alert('录音出现错误，请重试'); document.onmouseup = null; })
-                
-
+                .catch(err=> {
+                    document.onmouseup = null;
+                    this.recording = false;
+                    this.prompt = '按住说话';
+                    this.bus.$emit('state', false);
+                    this.recorder.clear();
+                    alert('录音出现错误，请重试');
+                })
             };
         }
 
@@ -138,20 +144,18 @@
 
         pause() {
             clearInterval(this.ID);
-            this.time = this.recorder.time;
             try { this.$refs.progress.style.strokeDashoffset = this.progressLen } catch(e) {}; 
             try { this.$refs.audio.currentTime = 0 } catch(e) {};
             this.playing = false;
-            this.audition || this.$nextTick(()=> this.prompt = '按住说话');
+            this.audition ? (this.time = this.recorder.time) : (this.prompt = '按住说话');
         }
 
         quit() {
-            this.$refs.audio.pause();
             this.audition = false; 
             this.recordData = null;
             this.recorder.clear();
             this.bus.$emit('state', false);
-            this.prompt = '按住说话';
+            this.$refs.audio.paused ? (this.prompt = '按住说话') : this.$refs.audio.pause();
         }
     }
 
