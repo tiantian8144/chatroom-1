@@ -120,7 +120,7 @@
 
         formatTime(time: number) {
             let date = new Date(time);
-            return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours() >= 13 ? `下午${date.getHours() - 12}` : `上午${date.getHours()}`}:${date.getMinutes()}:${date.getSeconds()}`;
+            return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours() >= 13 ? `下午${date.getHours() - 12}` : `上午${date.getHours()}`}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
         }
 
         handler(e: MouseEvent) {

@@ -63,11 +63,13 @@
         mounted() {
             
             new Recorder((time: number)=> {
-                if(time < 15 ) { this.recording && (this.time = time); }
-                else { alert('录音不得超过15s'); this.handleAudition(); } 
+                if(this.recording) {
+                    if(time < 15 ) this.time = time;
+                    else { alert('录音不得超过15s'); this.handleAudition(); } 
+                } else this.recorder.suspend();
             })
             .then(recorder=> this.recorder = recorder).catch(err=> { this.$emit('cantrecord'); alert('您的浏览器无法使用录音功能'); })
-                    
+
             this.reader.addEventListener('load', (e: ProgressEvent)=> this.recordURL = this.reader.result);
         }
 
@@ -180,6 +182,7 @@
         }
 
         .caption {
+            user-select: none;
             flex: 0 1 3em;
             line-height: 3em;
             color: #666;

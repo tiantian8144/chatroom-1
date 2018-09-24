@@ -11,10 +11,10 @@
         </div>
 
         <div class='options' :class='{PC: !isMobile}'>
-            <div class='icon icon-emojis'>
+            <div class='icon icon-emojis' @touchmove='!$event'>
                 <svg  :class='{active: option === "emojis"}' 
-                @click='option = option === "emojis" ? "" : "emojis"'
-                @touchstart.prevent='option = option === "emojis" ? "" : "emojis"' 
+                @click='isMobile || (option = option === "emojis" ? "" : "emojis")'
+                @touchstart='option = option === "emojis" ? "" : "emojis"' 
                 viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1728" xmlns:xlink="http://www.w3.org/1999/xlink">
                     <path d="M512 51.2c254.088533 0 460.8 206.711467 460.8 460.8S766.088533 972.8 512 972.8 51.2 766.088533 51.2 512 257.911467 51.2 512 51.2M512 0C229.2224 0 0 229.2224 0 512s229.2224 512 512 512 512-229.2224 512-512S794.7776 0 512 0L512 0z" p-id="1729"></path>
                     <path d="M511.8464 768c-109.056 0-203.451733-77.755733-229.5808-189.0816-3.2256-13.7728 5.3248-27.5456 19.080533-30.7712 13.738667-3.208533 27.5456 5.307733 30.7712 19.063467C352.785067 655.291733 426.683733 716.8 511.8464 716.8c85.7088 0 159.726933-62.0032 180.002133-150.766933 3.140267-13.789867 16.827733-22.493867 30.651733-19.2512 13.789867 3.140267 22.408533 16.861867 19.2512 30.651733C716.151467 689.629867 621.6192 768 511.8464 768z" p-id="1730"></path>
@@ -33,7 +33,11 @@
             <input id='uploadImg' type="file" @change='upload($event)' accept='image/*' style='display: none' multiple>
         </div>
 
-        <div v-show='option === "emojis"' class='panel panel-emojis' :class='{"panel-emojis-hover": !isMobile}' @click='isMobile || insertEmoji($event)' @touchstart='insertEmoji($event)'>
+        <div v-show='option === "emojis"' class='panel panel-emojis' :class='{"panel-emojis-hover": !isMobile}' 
+        @click='isMobile || insertEmoji($event)' 
+        @touchstart='isMoved = false'
+        @touchmove='isMoved = true'
+        @touchend='isMoved || insertEmoji($event)'>
             <li class='emoji' v-for='(char, i) of emojis' :key='i'>{{char}}</li>
         </div>
         <sound v-if='!isMobile && isRecorder' v-show='option === "audio"' class='panel panel-audio' @message='$emit("message", $event); sending = true;' @cantrecord='isRecorder = false'></sound>
@@ -56,19 +60,21 @@
 
         sending: boolean = false;
         isRecorder: boolean = true;
+        isMoved: boolean = false;
 
         option: string = 'null';
         imageData: Array<Blob> = [];
         compress: compressImg = null;
-        selection = null;
+        selection: Selection = null;
+        lastRange: Range = null;
         emojis: Array<string> = ['😂', '🙏', '😄', '😏', '😇', '😅', '😌', '😘', '😍', '🤓', '😜', '😎', '😊', '😳', '🙄', '😱', '😒', '😔', '😷', '👿', '🤗', '😩', '😤', '😣', '😰', '😴', '😬', '😭', '👻', '👍', '✌️', '👉', '👀', '🐶', '🐷', '😹', '⚡️', '🔥', '🌈', '🍏', '⚽️', '❤️', '🇨🇳']
 
         mounted() {
 
+            this.compress = new compressImg();
+
             let val: Array<string> = ['表情', '录音', '图片'],
                 bubble: Element = this.$refs.bubble as Element;
-
-            this.comppress = new compressImg();
 
             if(!this.isMobile) {
                 Array.from(document.querySelectorAll('.options svg'), (v, i)=> {
@@ -85,19 +91,18 @@
             //插入拖拽的图片
             this.bus.$on('data', files=> this.insertImage(files));
             
-            if(window.getSelection) {
-                let Selection: Selection = window.getSelection();
+            if(getSelection) {
+                this.selection = getSelection();
+                let handler = e=> this.selection.rangeCount && (this.lastRange = this.selection.getRangeAt(0));
 
-                (this.$refs.input as EventTarget).addEventListener('blur', e=> {
-                    let { anchorNode, anchorOffset } = Selection;
-                    this.selection = { anchorNode, anchorOffset };
-                });
-
-                (document as EventTarget).addEventListener('focus', e=> {
-                    if(e.target !== this.$refs['icon-image']) {
-                        this.selection = null
-                    }
-                });
+                if(this.isMobile) {
+                    (this.$refs.input as HTMLInputElement).addEventListener('touchend', e=> setTimeout(handler, 50));
+                    (this.$refs.input as HTMLInputElement).addEventListener('input', e=> setTimeout(handler, 50));
+                }
+                else {
+                    (this.$refs.input as HTMLInputElement).addEventListener('click', handler);
+                    (this.$refs.input as HTMLInputElement).addEventListener('keyup', handler);
+                }
             }
 
             //快速发送消息
@@ -111,22 +116,38 @@
         }
 
         //根据光标插入元素
-        insert(node: Text | HTMLElement | DocumentFragment) {
+        insert(node: String | HTMLElement | DocumentFragment | Text) {
 
             let input: HTMLInputElement = this.$refs.input as HTMLInputElement;
+            typeof node === 'string' && (node = document.createTextNode(node));
 
-            if(this.selection) {
+            if(this.lastRange) {
 
-                let selection = this.selection;
-                
-                if(selection.anchorNode.nodeName === 'DIV')
-                    selection.anchorOffset === input.childNodes.length ? input.appendChild(node) : input.insertBefore(node, input.childNodes[selection.anchorOffset]);
-                else if(selection.anchorNode.nodeType === 3) {
-                    if(selection.anchorOffset === selection.anchorNode.nodeValue.length)
-                        selection.anchorNode.nextSibling ? input.insertBefore(node, selection.anchorNode.nextSibling) : input.appendChild(node);
-                    else
-                        input.insertBefore(node, (selection.anchorNode as Text).splitText(selection.anchorOffset));
+                let range = this.lastRange;
+
+                range.collapsed || range.deleteContents();
+                this.selection.removeAllRanges();
+
+                if(range.startContainer.nodeName === 'DIV') {
+                    if(range.startOffset === input.childNodes.length) input.appendChild(node);
+                    else input.insertBefore(node, input.childNodes[range.startOffset]);
+
+                    range.setStart(input, range.startOffset + 1);
+
+                } else if(range.startContainer.nodeType === 3) {
+
+                    if(node.nodeType === 3) {
+                        range.startContainer.insertData(range.startOffset, node.data);
+                        range.setStart(range.startContainer, range.startOffset + node.length);
+                    
+                    } else {
+                        let endImg = node.lastElementChild;
+                        input.insertBefore(node, range.startContainer.splitText(range.startOffset));
+                        range.setStart(input, Array.from(input.childNodes).findIndex(v=> v === endImg) + 1);
+                    }
                 }
+
+                this.selection.addRange(this.lastRange = range);
 
             } else {
                 input.appendChild(node);
@@ -135,7 +156,7 @@
         
         //插入表情
         insertEmoji(e: MouseEvent) {
-            this.insert(document.createTextNode(e.target.innerHTML));
+            this.insert(e.target.innerHTML);
         }
 
         switchAudio() {
@@ -159,7 +180,7 @@
             
             for(let v of files as FileList) {
                 p = p.then(()=> new Promise(resolve=> {
-                    reader.onload = e=> { fragment.appendChild(this.createNodeByString(`<img alt=图片链接已失效 data-order=${this.imageData.push(v) - 1} src=${e.target.result}>`) as Node); resolve(); };
+                    reader.onload = e=> { fragment.appendChild(this.createNodeByString(`<img data-order=${this.imageData.push(v) - 1} src=${e.target.result}>`) as Node); resolve(); };
                     reader.readAsDataURL(v);
                 }));
             }
