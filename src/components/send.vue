@@ -56,7 +56,6 @@
 
         @Prop(String) avatar;
         @Prop(String) domain;
-        @Prop(Boolean) isMobile;
 
         sending: boolean = false;
         isRecorder: boolean = true;
